@@ -9,6 +9,43 @@
     _Log(ANSI_FMT("[%s:%d %s] " format, ANSI_FG_BLUE) "\n", \
         __FILE__, __LINE__, __func__, ## __VA_ARGS__)
 
+/*
+void f(){
+Log("%d\n",123)
+}
+
+_Log(ANSI_FMT("[%s:%d %s] " "%d\n", ANSI_FG_BLUE) "\n", \
+        __FILE__, __LINE__, __func__, ## 123)
+
+#define ANSI_FMT(str, fmt) fmt str ANSI_NONE
+
+_Log(ANSI_FMT("[%s:%d %s] " "%d\n", ANSI_FG_BLUE) "\n", \
+        __FILE__, __LINE__, __func__, ## 123)
+
+_Log(ANSI_FG_BLUE "[%s:%d %s] " "%d\n" ANSI_NONE " \n", \
+        __FILE__, __LINE__, __func__, ## 123)       
+
+do { \
+    printf(ANSI_FMT("[%s:%d %s] " "%d\n", ANSI_FG_BLUE) "\n", \
+        __FILE__, __LINE__, __func__, ## 123); \
+    log_write(ANSI_FMT("[%s:%d %s] " "%d\n", ANSI_FG_BLUE) "\n", \
+        __FILE__, __LINE__, "__func__", ## 123); \
+  } while (0)
+  
+ANSI_FG_BLUE "[%s:%d %s] " "%d\n" ANSI_NONE "\n", \
+        __FILE__, __LINE__, __func__, ## 123
+
+ANSI_FG_BLUE "[%s:%d %s] " "%d\n" ANSI_NONE "\n", \
+        "debug.h", 29, "f", 123
+
+do { \
+    printf(ANSI_FG_BLUE "[%s:%d %s] " "%d\n" ANSI_NONE "\n", \
+        "debug.h", 29, "f", 123); \
+    log_write(ANSI_FG_BLUE "[%s:%d %s] " "%d\n" ANSI_NONE "\n", \
+        "debug.h", 29, "f", 123); \
+  } while (0)
+*/
+
 #define Assert(cond, format, ...) \
   do { \
     if (!(cond)) { \
