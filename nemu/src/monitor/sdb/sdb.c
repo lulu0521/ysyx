@@ -1,9 +1,11 @@
 #include <isa.h>
+#include <stdlib.h>
 #include <cpu/cpu.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
 #include "utils.h"
+#include "memory/paddr.h"
 
 static int is_batch_mode = false;
 
@@ -41,6 +43,58 @@ static int cmd_q(char *args) {
 
 static int cmd_help(char *args);
 
+static int cmd_si(char *args){
+  char *arg = strtok(NULL," ");
+  int i;
+  if(arg==NULL){
+    cpu_exec(1);
+  }
+  else{
+    i = atoi(arg);
+    cpu_exec(i);
+  }
+  return 0;
+}
+
+//////////////////////////////////////////
+static int cmd_info(char *args){
+  char *arg = strtok(NULL," ");
+  
+  if(*arg=='r'){
+    isa_reg_display();
+    printf("\n");
+  }
+  //else if(arg="w"){
+  //  for(i=0;i<NR_WP;i++){
+//
+  //  }
+  //}
+  else{
+    printf("The infomation you entered is invalid\n");
+  }
+  return 0;
+}
+
+static int cmd_x(char *args){
+  int i;
+  int addr;
+
+  char *arg1 = strtok(NULL," ");
+  i = atoi(arg1);
+
+  char *arg2 = strtok(NULL," ");
+  addr = strtol(arg2, NULL, 16);
+
+  for(int j=0;j<i;j++){
+    uint32_t val;
+    val = paddr_read(addr + 4*j, 4);
+    printf("%x ",val);
+  }
+  printf("\n");
+  return 0;
+}
+
+
 static struct {
   const char *name;
   const char *description;
@@ -49,6 +103,9 @@ static struct {
   { "help", "Display informations about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
+  { "si", "Contineu to execute the program n step", cmd_si},
+  { "info", "print register or watchpoint information", cmd_info},
+  { "x", "Scan memory", cmd_x},
 
   /* TODO: Add more commands */
 
