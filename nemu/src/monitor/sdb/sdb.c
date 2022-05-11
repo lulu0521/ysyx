@@ -88,7 +88,7 @@ static int cmd_x(char *args){
   for(int j=0;j<i;j++){
     uint32_t val;
     val = paddr_read(addr + 4*j, 4);
-    printf("%x ",val);
+    printf("0x""%x ",val);
   }
   printf("\n");
   return 0;
