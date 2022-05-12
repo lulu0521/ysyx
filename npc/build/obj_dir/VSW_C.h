@@ -5,19 +5,19 @@
 // The class here is then constructed to instantiate the design.
 // See the Verilator manual for examples.
 
-#ifndef VERILATED_VTOP_H_
-#define VERILATED_VTOP_H_  // guard
+#ifndef VERILATED_VSW_C_H_
+#define VERILATED_VSW_C_H_  // guard
 
 #include "verilated_heavy.h"
 
-class Vtop__Syms;
-class Vtop___024root;
+class VSW_C__Syms;
+class VSW_C___024root;
 
 // This class is the main interface to the Verilated model
-class Vtop VL_NOT_FINAL {
+class VSW_C VL_NOT_FINAL {
   private:
     // Symbol table holding complete model state (owned by this class)
-    Vtop__Syms* const vlSymsp;
+    VSW_C__Syms* const vlSymsp;
 
   public:
 
@@ -34,19 +34,19 @@ class Vtop VL_NOT_FINAL {
 
     // Root instance pointer to allow access to model internals,
     // including inlined /* verilator public_flat_* */ items.
-    Vtop___024root* const rootp;
+    VSW_C___024root* const rootp;
 
     // CONSTRUCTORS
     /// Construct the model; called by application code
     /// If contextp is null, then the model will use the default global context
     /// If name is "", then makes a wrapper with a
     /// single model invisible with respect to DPI scope names.
-    explicit Vtop(VerilatedContext* contextp, const char* name = "TOP");
-    explicit Vtop(const char* name = "TOP");
+    explicit VSW_C(VerilatedContext* contextp, const char* name = "TOP");
+    explicit VSW_C(const char* name = "TOP");
     /// Destroy the model; called (often implicitly) by application code
-    virtual ~Vtop();
+    virtual ~VSW_C();
   private:
-    VL_UNCOPYABLE(Vtop);  ///< Copying not allowed
+    VL_UNCOPYABLE(VSW_C);  ///< Copying not allowed
 
   public:
     // API METHODS

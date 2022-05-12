@@ -1,4 +1,4 @@
-module top(
+module SW_C(
   input a,
   input b,
   output f

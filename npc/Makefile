@@ -15,8 +15,8 @@
 #	@echo "Write this Makefile by your self."
 #
 #include ../Makefile
-TOPNAME = top
-NXDC_FILES = constr/top.nxdc
+TOPNAME = SW_C
+NXDC_FILES = constr/SW_C.nxdc
 INC_PATH ?=
 
 VERILATOR = verilator

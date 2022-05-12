@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <nvboard.h>
-#include <Vtop.h>
+#include <VSW_C.h>
 
 static TOP_NAME dut;
-void nvboard_bind_all_pins(Vtop* top);
+void nvboard_bind_all_pins(VSW_C* top);
 
 static void single_cycle() {
   //int a = rand() & 1;
