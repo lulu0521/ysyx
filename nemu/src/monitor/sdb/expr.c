@@ -1,5 +1,5 @@
 #include <isa.h>
-
+#include <stdlib.h>
 /* We use the POSIX regex functions to process regular expressions.
  * Type 'man regex' for more information about POSIX regex functions.
  */
@@ -33,13 +33,10 @@ static struct rule {
   {"/",'/' }             //div
 };
 
-#define NR_REGEX ARRLEN(rules)
+#define NR_REGEX ((sizeof(rules) / sizeof(rules[0])))
 
 static regex_t re[NR_REGEX] = {};
 
-/* Rules are used for many times.
- * Therefore we compile them only once before any usage.
- */
 void init_regex() {
   int i;
   char error_msg[128];
@@ -54,6 +51,8 @@ void init_regex() {
   }
 }
 
+
+
 typedef struct token {
   int type;
   char str[32];
@@ -61,6 +60,7 @@ typedef struct token {
 
 static Token tokens[32] __attribute__((used)) = {};
 static int nr_token __attribute__((used))  = 0;
+
 
 static bool make_token(char *e) {
   int position = 0;
@@ -88,13 +88,15 @@ static bool make_token(char *e) {
          */
 
         switch (rules[i].token_type) {
-          default: TODO();
+          case TK_NOTYPE : break;
+          case NUM : sprintf(tokens[nr_token].str,"%.*s",substr_len, substr_start);
+          
+          default  : {tokens[nr_token].type = rules[i].token_type;
+                      nr_token ++;
+                      break;
+          }
+          //default: TODO();
         }
-
-        break;
-
-
-        
       }
     }
 
@@ -103,19 +105,134 @@ static bool make_token(char *e) {
       return false;
     }
   }
-
   return true;
 }
 
+int bra_token[5000];
+/*======find matched brackets==========*/
+
+int match_bra(int start,int end){
+  
+  int bra_mark = 0;
+  int stack_bra[256];
+  int stack_top = 0;
+  int bra_num = 0;
+  int i;
+
+  for(i=start;i<end;i++){
+    switch(tokens[i].type){
+      case '(':{
+        bra_num++;
+        bra_mark++;
+        bra_token[i] = bra_mark;
+        stack_bra[stack_top++] = bra_mark;
+        break;
+      }
+      case ')':{
+         bra_num--;
+        if(bra_num < 0){
+          return -1;
+        }
+        bra_token[i] = stack_bra[--stack_top];
+        break;
+      }
+      default:bra_token[i] = 0;
+      break;
+    }
+  }
+  return 0;
+}
+
+
+int priority(int token_type){
+  switch(token_type){
+    case '+':
+    case '-': return 0;
+    case '*':
+    case '/': return 1;
+    default:assert(0);
+  }
+}
+
+/*find dominated operation and matched brackets*/
+int domi_op(int p,int q,bool *sucess){
+  int bra_num = 0;
+  int i;
+  int domi_s = -1;
+
+  for(i=p;i<q;i++){
+    switch(tokens[i].type){
+      case NUM: break;
+      case '(':
+        bra_num++;
+        break;
+      case ')':
+        bra_num--;
+        break;
+      default:{
+        if(bra_num==0){
+          if(domi_s==-1 ||
+          priority(tokens[domi_s].type)-priority(tokens[i].type)>0||
+          priority(tokens[domi_s].type)-priority(tokens[i].type)==0){
+          domi_s = i;
+          }
+        }
+      }
+    }
+
+  }
+  return domi_s;
+} 
+
+int eval(int p, int q, bool *success){
+
+  if(p > q){
+    *success = false;
+    return 0;
+  }
+
+  else if(p == q){
+    int num;
+    num = atoi(tokens[p].str);
+    *success = true;
+    return num;
+  }
+  
+  else if(bra_token[p]==bra_token[q]){
+    eval(p+1,q-1,success);
+    return 0;
+  }
+
+  else{
+    int domi_s = domi_op(p,q,success);
+
+    int val1 = eval(p, domi_s - 1, success);
+    if (!*success) { return 0; }
+
+    int val2 = eval(domi_s + 1, q, success);
+    if (!*success) { return 0; }
+
+    switch(domi_s){
+      case '+':return val1 + val2; 
+      case '-':return val1 - val2; 
+      case '*':return val1 * val2; 
+      case '/':return val1 / val2; 
+      default:assert(0);
+    }
+  }
+
+}
 
 word_t expr(char *e, bool *success) {
   if (!make_token(e)) {
     *success = false;
     return 0;
   }
-
+  if(match_bra(0,nr_token-1)<0){
+    *success = false;
+    return 0;
+  }
   /* TODO: Insert codes to evaluate the expression. */
-  TODO();
 
-  return 0;
+  return eval(0,nr_token-1,success);
 }
