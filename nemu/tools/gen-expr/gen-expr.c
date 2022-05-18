@@ -63,7 +63,7 @@ static void gen_rand_expr() {
     }
     else{
       op_cnt ++;
-      gen_space();
+ 
       gen_rand_expr(); 
       gen_space();
       gen_rand_op(); 
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
     pclose(fp);
 
     remove_u(buf);
-    printf("%u %s\n\n", result, buf);
+    printf("%u %s\n", result, buf);
   }
   return 0;
 }
