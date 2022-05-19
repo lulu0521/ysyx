@@ -42,14 +42,14 @@ int main(int argc, char *argv[]) {
         printf(ANSI_FG_RED "Failed : %s success=%d, my=%u num=%u \n" ANSI_NONE,
                 expr_test, *success, my, num);
       } 
-      else {
-        printf(ANSI_FG_GREEN "PASS! \n" ANSI_NONE);
-      }
+      //else {
+      //  printf(ANSI_FG_GREEN "PASS! \n" ANSI_NONE);
+      //}
         
     }
 
   /* Start engine. */
-  //engine_start();
+  engine_start();
   free (success);
  
   return is_exit_status_bad();
