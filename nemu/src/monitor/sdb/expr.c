@@ -5,9 +5,12 @@
  */
 #include <regex.h>
 #include "utils.h"
+#include <memory/paddr.h>
+
+
 
 enum {
-  TK_NOTYPE = 256, TK_EQ,NUM
+  TK_NOTYPE = 256, TK_EQ,TK_NEQ,TK_NUM,TK_NUM_16,TK_REG,TK_AND,TK_DEREFE,
   /* TODO: Add more token types */
 };
 
@@ -20,7 +23,11 @@ static struct rule {
    */
   {" +", TK_NOTYPE},       // spaces
   {"==", TK_EQ},           // equal
-  {"([1-9][0-9]{0,9}|0)",NUM},   //num
+  {"!=",TK_NEQ},
+  {"&&",TK_AND},
+  {"([1-9][0-9]{0,9})|0",TK_NUM},   //num
+  {"0x(([1-9a-fA-F][0-9a-fA-F]{0,15})|0)",TK_NUM_16},
+  {"$[0-9a-z]{1,2}",TK_REG},
   {"\\(",'('},
   {"\\)",')'},            //brackets
   {"\\+", '+' },          // plus
@@ -85,17 +92,16 @@ static bool make_token(char *e) {
          * of tokens, some extra actions should be performed.
          */
         assert(substr_len <= 256);
-        assert(nr_token < NUM_TOKENS);
+        assert(nr_token <= NUM_TOKENS);
 
         switch (rules[i].token_type) {
           case TK_NOTYPE : break;
-          case NUM : sprintf(tokens[nr_token].str,"%.*s",substr_len, substr_start);
-          
-          default  : {tokens[nr_token].type = rules[i].token_type;
-                      nr_token ++;
-                      break;
-          }
-          //default: TODO();
+          case TK_REG    :
+          case TK_NUM    : 
+          case TK_NUM_16 : sprintf(tokens[nr_token].str,"%.*s",substr_len, substr_start);
+          default        : {tokens[nr_token].type = rules[i].token_type;
+                           nr_token ++;
+                           }
         }
        break;
       }
@@ -109,7 +115,7 @@ static bool make_token(char *e) {
   return true;
 }
 
-int bra_token[5000];
+int bra_token[65536];
 /*======find matched brackets==========*/
 
 int match_bra(int start,int end){
@@ -147,10 +153,12 @@ int match_bra(int start,int end){
 
 int priority(int token_type){
   switch(token_type){
-    case '+':
-    case '-': return 0;
-    case '*':
-    case '/': return 1;
+    case TK_AND    : return 0;
+    case '+'       :
+    case '-'       : return 1;
+    case '*'       :
+    case '/'       : return 2;
+    case TK_DEREFE : return 3;
     default:assert(0);
   }
 }
@@ -163,7 +171,9 @@ int domi_op(int p,int q,bool *success){
 
   for(i=p;i<q;i++){
     switch(tokens[i].type){
-      case NUM: break;
+      case TK_REG   :
+      case TK_NUM_16:
+      case TK_NUM   : break;
       case '(':
         bra_num++;
         break;
@@ -174,7 +184,8 @@ int domi_op(int p,int q,bool *success){
         if(bra_num==0){
           if(domi_s==-1 ||
           priority(tokens[domi_s].type)-priority(tokens[i].type)>0||
-          priority(tokens[domi_s].type)-priority(tokens[i].type)==0){
+          (priority(tokens[domi_s].type)-priority(tokens[i].type)==0&&
+          tokens[i].type!=TK_DEREFE)){
           domi_s = i;
           }
         }
@@ -191,16 +202,27 @@ int domi_op(int p,int q,bool *success){
   return domi_s;
 } 
 
-int eval(int p, int q, bool *success){
+
+word_t eval(int p, int q, bool *success){
   if(p > q){
     *success = false;
     return 0;
   }
 
   else if(p == q){
-    uint32_t num;
-    num = atoi(tokens[p].str);
-    *success = true;
+    word_t num = 0;
+    char **str_end = 0;
+    if(tokens[p].type == TK_NUM){
+      num = atoi(tokens[p].str);
+      *success = true;
+    }
+    if(tokens[p].type == TK_NUM_16){
+      num = strtol(tokens[p].str,str_end,16);
+      *success = true;
+    }
+    if(tokens[p].type == TK_REG){
+      num = isa_reg_str2val(tokens[p].str+1, success);
+    }
     return num;
   }
   
@@ -213,17 +235,25 @@ int eval(int p, int q, bool *success){
   else{
     int domi_s = domi_op(p,q,success);
 
-    uint32_t val1 = eval(p, domi_s - 1, success);
+    if(tokens[domi_s].type == TK_DEREFE){
+    word_t val = eval(domi_s+1,q,success);
+    return paddr_read(val,4);
+    }
+
+    word_t val1 = eval(p, domi_s - 1, success);
     if (!*success) { return 0; }
 
-    uint32_t val2 = eval(domi_s + 1, q, success);
+    word_t val2 = eval(domi_s + 1, q, success);
     if (!*success) { return 0; }
 
     switch(tokens[domi_s].type){
-      case '+':return val1 + val2; 
-      case '-':return val1 - val2; 
-      case '*':return val1 * val2; 
-      case '/':return val1 / val2; 
+      case '+' :return val1 + val2; 
+      case '-' :return val1 - val2; 
+      case '*' :return val1 * val2; 
+      case '/' :return val1 / val2; 
+      case TK_AND:return val1 && val2;
+      case TK_EQ : return val1 == val2;
+      case TK_NEQ: return val1 != val2;
       default://printf("%d\n",domi_s);
       assert(0);
     }
@@ -236,6 +266,16 @@ word_t expr(char *e, bool *success) {
     *success = false;
     return 0;
   }
+
+  int i;
+  for(i=0;i<nr_token;i++){
+    if(tokens[i].type=='*'        &&
+      (i==0                       ||
+      (tokens[i-1].type!=')' && tokens[i-1].type!=TK_NUM && tokens[i-1].type!=TK_NUM_16 && tokens[i-1].type!=TK_DEREFE))){
+      tokens[i].type = TK_DEREFE;
+      }
+  }
+
   if(match_bra(0,nr_token-1)<0){
     *success = false;
     return 0;

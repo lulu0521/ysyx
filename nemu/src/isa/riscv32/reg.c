@@ -8,13 +8,27 @@ const char *regs[] = {
   "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
 };
 
+const char *regs_num[] = {
+  "0", "1", "2", "3", "4", "5", "6", "7",
+  "8", "9", "10", "11", "12", "13", "14", "15",
+  "16", "17", "18", "19", "20", "21", "22", "23",
+  "24", "25", "26", "27", "28", "29", "30", "31"
+};
 void isa_reg_display() {
   int i;
     for(i=0;i<(sizeof(regs)/sizeof(regs[0]));i++){
-    printf("%s    %d\n",regs[i],gpr(i));
+    printf("%s  %s  %d\n",regs[i],regs_num[i],gpr(i));
   }
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
+  int i;
+  for(i = 0;i<(sizeof(regs)/sizeof(regs[0]));i++){
+    if(strcmp(s,regs[i])==0 ||strcmp(s,regs_num[i])==0){
+      *success = true;
+      return gpr(i);
+    }
+  }
+  *success = false;
   return 0;
 }

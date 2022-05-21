@@ -6,11 +6,15 @@
 #include "sdb.h"
 #include "utils.h"
 #include "memory/paddr.h"
+#include "watchpoint.h"
+
 
 static int is_batch_mode = false;
 
 void init_regex();
 void init_wp_pool();
+int delete_wp(int NO);
+void info_wp();
 
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 static char* rl_gets() {
@@ -44,31 +48,28 @@ static int cmd_q(char *args) {
 static int cmd_help(char *args);
 
 static int cmd_si(char *args){
-  char *arg = strtok(NULL," ");
+  char *arg1 = strtok(NULL," ");
   int i;
-  if(arg==NULL){
+  if(arg1==NULL){
     cpu_exec(1);
   }
   else{
-    i = atoi(arg);
+    i = atoi(arg1);
     cpu_exec(i);
   }
   return 0;
 }
 
-//////////////////////////////////////////
 static int cmd_info(char *args){
-  char *arg = strtok(NULL," ");
+  char *arg1 = strtok(NULL," ");
   
-  if(*arg=='r'){
+  if(*arg1=='r'){
     isa_reg_display();
     printf("\n");
   }
-  //else if(arg="w"){
-  //  for(i=0;i<NR_WP;i++){
-//
-  //  }
-  //}
+  else if(*arg1=='w'){
+    info_wp();
+  }
   else{
     printf("The infomation you entered is invalid\n");
   }
@@ -86,7 +87,7 @@ static int cmd_x(char *args){
   addr = strtol(arg2, NULL, 16);
 
   for(int j=0;j<i;j++){
-    uint32_t val;
+    word_t val;
     val = paddr_read(addr + 4*j, 4);
     printf("0x""%x ",val);
   }
@@ -94,6 +95,12 @@ static int cmd_x(char *args){
   return 0;
 }
 
+static int cmd_d(char *arg){
+  char *arg1 = strtok(NULL," ");
+  int NO = atoi(arg1);
+  delete_wp(NO);
+  return 0;
+}
 
 static struct {
   const char *name;
@@ -103,9 +110,10 @@ static struct {
   { "help", "Display informations about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
-  { "si", "Contineu to execute the program n step", cmd_si},
+  { "si", "Continue to execute the program n step", cmd_si},
   { "info", "print register or watchpoint information", cmd_info},
   { "x", "Scan memory", cmd_x},
+  { "d", "Delete WP",cmd_d},
 
   /* TODO: Add more commands */
 
