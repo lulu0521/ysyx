@@ -67,12 +67,9 @@ WP* scan_WP(){
     if(p->New_Val != p->Old_Val){
       return p;
     }
-    else {
-      return NULL;
-    }
     p = p->next;
   }
-  return 0;
+  return NULL;
 }
 
 void info_wp(){
@@ -91,9 +88,7 @@ int delete_wp(int NO){
         free_wp(p);
         return 0;
       }
-      else {
         p= p->next;
-      }
     }
     printf("The WP %d you entered is invalid" ,NO);
     return 0;
@@ -103,3 +98,4 @@ int delete_wp(int NO){
     assert(0);
   }
 }
+

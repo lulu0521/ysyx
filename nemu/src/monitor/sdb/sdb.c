@@ -102,6 +102,11 @@ static int cmd_d(char *arg){
   return 0;
 }
 
+static int cmd_w(char *arg){
+  recode_expr(arg);
+}
+
+
 static struct {
   const char *name;
   const char *description;
@@ -114,6 +119,7 @@ static struct {
   { "info", "print register or watchpoint information", cmd_info},
   { "x", "Scan memory", cmd_x},
   { "d", "Delete WP",cmd_d},
+  { "w", "Set WP",cmd_w},
 
   /* TODO: Add more commands */
 

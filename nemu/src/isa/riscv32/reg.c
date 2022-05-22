@@ -14,11 +14,14 @@ const char *regs_num[] = {
   "16", "17", "18", "19", "20", "21", "22", "23",
   "24", "25", "26", "27", "28", "29", "30", "31"
 };
+
 void isa_reg_display() {
   int i;
-    for(i=0;i<(sizeof(regs)/sizeof(regs[0]));i++){
+  for(i=0;i<(sizeof(regs)/sizeof(regs[0]));i++){
     printf("%s  %s  %d\n",regs[i],regs_num[i],gpr(i));
   }
+  printf("%s  %d\n","pc",cpu.pc);
+  
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
@@ -28,6 +31,10 @@ word_t isa_reg_str2val(const char *s, bool *success) {
       *success = true;
       return gpr(i);
     }
+  }
+  if(strcmp(s,"pc")==0){
+    *success = true;
+    return cpu.pc;
   }
   *success = false;
   return 0;
