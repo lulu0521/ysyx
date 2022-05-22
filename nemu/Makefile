@@ -15,13 +15,16 @@ ENGINE ?= $(call remove_quote,$(CONFIG_ENGINE))
 NAME    = $(GUEST_ISA)-nemu-$(ENGINE)
 
 # Include all filelist.mk to merge file lists
-FILELIST_MK = $(shell find ./src -name "filelist.mk")
+FILELIST_MK = $(shell 	
+	 ./src -name "filelist.mk")
 include $(FILELIST_MK)
 
 # Filter out directories and files in blacklist to obtain the final set of source files
 DIRS-BLACKLIST-y += $(DIRS-BLACKLIST)
-SRCS-BLACKLIST-y += $(SRCS-BLACKLIST) $(shell find $(DIRS-BLACKLIST-y) -name "*.c")
-SRCS-y += $(shell find $(DIRS-y) -name "*.c")
+SRCS-BLACKLIST-y += $(SRCS-BLACKLIST) $(shell 	
+	 $(DIRS-BLACKLIST-y) -name "*.c")
+SRCS-y += $(shell 	
+	 $(DIRS-y) -name "*.c")
 SRCS = $(filter-out $(SRCS-BLACKLIST-y),$(SRCS-y))
 
 # Extract compiler and options from menuconfig
@@ -44,3 +47,7 @@ else
 # Include rules to build NEMU
 include $(NEMU_HOME)/scripts/native.mk
 endif
+
+count:
+	find . -name "*.c" -or -name "*.h" |xargs cat|grep -v ^$|wc -l
+  #$(shell find -L src/ -name "*.c" -o -name "*.cpp")

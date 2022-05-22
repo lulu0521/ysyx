@@ -104,6 +104,7 @@ static int cmd_d(char *arg){
 
 static int cmd_w(char *arg){
   recode_expr(arg);
+  return 0;
 }
 
 
