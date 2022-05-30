@@ -27,7 +27,7 @@ static struct rule {
   {"&&",TK_AND},
   {"([1-9][0-9]{0,9})|0",TK_NUM},   //num
   {"0x(([1-9a-fA-F][0-9a-fA-F]{0,15})|0)",TK_NUM_16},
-  {"$[0-9a-z]{1,2}",TK_REG},
+  {"\\$([0-9a-z]{1,2})",TK_REG},
   {"\\(",'('},
   {"\\)",')'},            //brackets
   {"\\+", '+' },          // plus
@@ -214,15 +214,18 @@ word_t eval(int p, int q, bool *success){
     char **str_end = 0;
     if(tokens[p].type == TK_NUM){
       num = atoi(tokens[p].str);
-      *success = true;
     }
-    if(tokens[p].type == TK_NUM_16){
+    else if(tokens[p].type == TK_NUM_16){
       num = strtol(tokens[p].str,str_end,16);
-      *success = true;
     }
-    if(tokens[p].type == TK_REG){
-      num = isa_reg_str2val(tokens[p].str+1, success);
+    else if(tokens[p].type == TK_REG){
+      num = isa_reg_str2val(tokens[p].str+1,success);
     }
+    else {
+      *success = false;
+      return 0;
+    }
+    *success = true;
     return num;
   }
   

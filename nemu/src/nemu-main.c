@@ -14,6 +14,9 @@ int main(int argc, char *argv[]) {
 #else
   init_monitor(argc, argv);
 #endif
+ 
+#if 0
+
   FILE* fp = fopen("/home/majianlu/ysyx-workbench/nemu/tools/gen-expr/input","r");
   char str_s[65536];
   char str_cpy[65536];
@@ -47,10 +50,12 @@ int main(int argc, char *argv[]) {
       //}
         
     }
-
-  /* Start engine. */
-  engine_start();
   free (success);
+#endif
+  /* Start engine. */
+ 
+  engine_start();
+ 
  
   return is_exit_status_bad();
 }

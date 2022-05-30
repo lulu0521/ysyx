@@ -22,8 +22,8 @@ void init_wp_pool(){
     wp_pool[i].next = (i == NR_WP - 1 ? NULL : &wp_pool[i + 1]);
   }
 
-  head = NULL;
-  free_ = wp_pool;
+  head = &wp_pool[0];
+  free_ = &wp_pool[1];
 }
 
 WP* new_wp(){
@@ -56,8 +56,9 @@ void free_wp(WP *wp){
 
 void recode_expr(char *e){
   WP *p = new_wp();
+  bool success = true;
   p->expr_content = e;
-  p->Old_Val = expr(e,success);
+  p->Old_Val = expr(e,&success);
 }
 
 WP* scan_WP(){

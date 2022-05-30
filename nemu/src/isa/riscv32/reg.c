@@ -29,11 +29,12 @@ word_t isa_reg_str2val(const char *s, bool *success) {
   for(i = 0;i<(sizeof(regs)/sizeof(regs[0]));i++){
     if(strcmp(s,regs[i])==0 ||strcmp(s,regs_num[i])==0){
       *success = true;
+      printf("%d\n",gpr(i));
       return gpr(i);
     }
   }
   if(strcmp(s,"pc")==0){
-    *success = true;
+   *success = true;
     return cpu.pc;
   }
   *success = false;
