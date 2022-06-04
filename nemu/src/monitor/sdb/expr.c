@@ -10,7 +10,7 @@
 
 
 enum {
-  TK_NOTYPE = 256, TK_EQ,TK_NEQ,TK_NUM,TK_NUM_16,TK_REG,TK_AND,TK_DEREFE,
+  TK_NOTYPE = 256, TK_EQ,TK_NEQ,TK_NUM,TK_REG,TK_AND,TK_DEREFE,
   /* TODO: Add more token types */
 };
 
@@ -25,8 +25,9 @@ static struct rule {
   {"==", TK_EQ},           // equal
   {"!=",TK_NEQ},
   {"&&",TK_AND},
+  {"0x(([1-9a-fA-F][0-9a-fA-F]{0,9})|0)",TK_NUM},
+ // {"0x[0-9a-fA-F]{1,10}",TK_NUM},
   {"([1-9][0-9]{0,9})|0",TK_NUM},   //num
-  {"0x(([1-9a-fA-F][0-9a-fA-F]{0,15})|0)",TK_NUM_16},
   {"\\$([0-9a-z]{1,2})",TK_REG},
   {"\\(",'('},
   {"\\)",')'},            //brackets
@@ -97,8 +98,7 @@ static bool make_token(char *e) {
         switch (rules[i].token_type) {
           case TK_NOTYPE : break;
           case TK_REG    :
-          case TK_NUM    : 
-          case TK_NUM_16 : sprintf(tokens[nr_token].str,"%.*s",substr_len, substr_start);
+          case TK_NUM    : sprintf(tokens[nr_token].str,"%.*s",substr_len, substr_start);
           default        : {tokens[nr_token].type = rules[i].token_type;
                            nr_token ++;
                            }
@@ -172,7 +172,6 @@ int domi_op(int p,int q,bool *success){
   for(i=p;i<q;i++){
     switch(tokens[i].type){
       case TK_REG   :
-      case TK_NUM_16:
       case TK_NUM   : break;
       case '(':
         bra_num++;
@@ -211,12 +210,8 @@ word_t eval(int p, int q, bool *success){
 
   else if(p == q){
     word_t num = 0;
-    char **str_end = 0;
     if(tokens[p].type == TK_NUM){
-      num = atoi(tokens[p].str);
-    }
-    else if(tokens[p].type == TK_NUM_16){
-      num = strtol(tokens[p].str,str_end,16);
+      num = strtoul(tokens[p].str, NULL, 0);
     }
     else if(tokens[p].type == TK_REG){
       num = isa_reg_str2val(tokens[p].str+1,success);
@@ -274,7 +269,7 @@ word_t expr(char *e, bool *success) {
   for(i=0;i<nr_token;i++){
     if(tokens[i].type=='*'        &&
       (i==0                       ||
-      (tokens[i-1].type!=')' && tokens[i-1].type!=TK_NUM && tokens[i-1].type!=TK_NUM_16 && tokens[i-1].type!=TK_DEREFE))){
+      (tokens[i-1].type!=')' && tokens[i-1].type!=TK_NUM && tokens[i-1].type!=TK_DEREFE))){
       tokens[i].type = TK_DEREFE;
       }
   }

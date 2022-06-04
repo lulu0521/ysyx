@@ -1,19 +1,20 @@
 #include "sdb.h"
+#include <string.h>
 
 #define NR_WP 32
 
 typedef struct watchpoint {
   int NO;
   struct watchpoint *next;
-  char *expr_content;
+  char expr_content[65536];
   word_t New_Val;
   word_t Old_Val;
   /* TODO: Add more members if necessary */
 } WP;
 
+bool success = true;
 static WP wp_pool[NR_WP] = {};
 static WP *head = NULL, *free_ = NULL;
-bool *success;
 
 void init_wp_pool(){
   int i;
@@ -23,6 +24,7 @@ void init_wp_pool(){
   }
 
   head = &wp_pool[0];
+  head->next = NULL;
   free_ = &wp_pool[1];
 }
 
@@ -45,7 +47,7 @@ WP* new_wp(){
 void free_wp(WP *wp){
   //delete from head list
   WP *p = wp->next;
-  wp->expr_content = p->expr_content;
+  strcpy(wp->expr_content ,p->expr_content);
   wp->next = p->next;
   //add in free_
   p->next = free_->next;
@@ -56,16 +58,16 @@ void free_wp(WP *wp){
 
 void recode_expr(char *e){
   WP *p = new_wp();
-  bool success = true;
-  p->expr_content = e;
+  strcpy(p->expr_content,e);
   p->Old_Val = expr(e,&success);
 }
 
 WP* scan_WP(){
   WP *p = head->next;
   while(p){
-    p->New_Val = expr(p->expr_content,success);
+    p->New_Val = expr(p->expr_content,&success);
     if(p->New_Val != p->Old_Val){
+      p->Old_Val =  p->New_Val;
       return p;
     }
     p = p->next;
@@ -73,12 +75,13 @@ WP* scan_WP(){
   return NULL;
 }
 
-void info_wp(){
+int info_wp(){
   WP *p = head->next;
   while(p){
-    printf("NMU:%d Type:hw watchpoint Disp:keep Enb:y What:%s\n",p->NO,p->expr_content);
+    printf("NUM:%d     What:%s\n",p->NO,p->expr_content);
     p = p->next;
   }
+  return 0;
 }
 
 int delete_wp(int NO){
@@ -91,7 +94,7 @@ int delete_wp(int NO){
       }
         p= p->next;
     }
-    printf("The WP %d you entered is invalid" ,NO);
+    printf("The WP %d you entered is invalid\n" ,NO);
     return 0;
   }
   else{

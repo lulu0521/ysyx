@@ -18,18 +18,17 @@ const char *regs_num[] = {
 void isa_reg_display() {
   int i;
   for(i=0;i<(sizeof(regs)/sizeof(regs[0]));i++){
-    printf("%s  %s  %d\n",regs[i],regs_num[i],gpr(i));
+    printf("%s  %s  %x\n",regs[i],regs_num[i],gpr(i));
   }
-  printf("%s  %d\n","pc",cpu.pc);
+  printf("%s  %x\n","pc",cpu.pc);
   
 }
 
-word_t isa_reg_str2val(const char *s, bool *success) {
+word_t isa_reg_str2val(const char *s,bool *success) {
   int i;
   for(i = 0;i<(sizeof(regs)/sizeof(regs[0]));i++){
-    if(strcmp(s,regs[i])==0 ||strcmp(s,regs_num[i])==0){
-      *success = true;
-      printf("%d\n",gpr(i));
+    if(strcmp(s,regs[i])==0 ||strcmp(s,regs_num[i])==0){    
+       *success = true;
       return gpr(i);
     }
   }

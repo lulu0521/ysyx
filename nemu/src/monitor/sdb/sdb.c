@@ -61,13 +61,13 @@ static int cmd_si(char *args){
 }
 
 static int cmd_info(char *args){
-  char *arg1 = strtok(NULL," ");
+  //char *arg1 = strtok(NULL," ");
   
-  if(*arg1=='r'){
+  if(*args=='r'){
     isa_reg_display();
     printf("\n");
   }
-  else if(*arg1=='w'){
+  else if(*args=='w'){
     info_wp();
   }
   else{
@@ -96,8 +96,8 @@ static int cmd_x(char *args){
 }
 
 static int cmd_d(char *arg){
-  char *arg1 = strtok(NULL," ");
-  int NO = atoi(arg1);
+  //char *arg1 = strtok(NULL," ");
+  int NO = atoi(arg);
   delete_wp(NO);
   return 0;
 }
