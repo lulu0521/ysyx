@@ -54,9 +54,11 @@ int main(int argc, char *argv[]) {
   free (success);
 #endif
   /* Start engine. */
- 
   engine_start();
- 
+#ifdef CONFIG_BATCH_MODE
+  extern void sdb_set_batch_mode();
+  sdb_set_batch_mode();
+#endif
  
   return is_exit_status_bad();
 }

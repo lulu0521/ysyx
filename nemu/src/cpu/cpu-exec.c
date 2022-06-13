@@ -11,19 +11,48 @@
  * You can modify this value as you want.
  */
 #define MAX_INST_TO_PRINT 10
+#define RB_LEN 32
 
 CPU_state cpu = {};
 uint64_t g_nr_guest_inst = 0;
 static uint64_t g_timer = 0; // unit: us
 static bool g_print_step = false;
+char iringbuf[RB_LEN][128];
+/*==========iringbuf arg==============*/
+int tail = 0;
+int g_inst_num = 0;
+/*========mtrace arg=========*/
+char g_mem_info[256];
+char *g_mem_ = g_mem_info;
+char *g_mem = g_mem_info;
+char **g_mem_p = &g_mem;
 
 void device_update();
 
+void ringbuf_dispaly(){
+  int i;
+  for(i=0;i<g_inst_num;i++){
+    if(i==tail){
+      printf("---->%s\n",iringbuf[i]);
+    }
+    printf("%s\n",iringbuf[i]);
+  }
+}
+
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
+//itrace print infomation of instruction 
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
+  sprintf(iringbuf[tail],"%s",_this->logbuf);
+  tail = (tail+1)%RB_LEN;
+  if(g_inst_num<RB_LEN)
+    ++g_inst_num;
 #endif
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
+
+#ifdef CONFIG_MTRACE_COND
+  if (CONFIG_MTRACE_COND) { log_write("%s\n", g_mem_); }
+#endif
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 #if 0
   WP *p = scan_WP();
@@ -32,9 +61,30 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
     printf("watchpoint triggered\n");
     sdb_mainloop();
   }
-
 #endif
 }
+
+#ifdef CONFIG_TRACE
+void trace_once(Decode *s,char** info_p,char *start_p, size_t psize){
+  *info_p += snprintf(*info_p,start_p + psize - *info_p, FMT_WORD ":", s->pc);
+  int ilen = s->snpc - s->pc;
+  int i;
+  uint8_t *inst = (uint8_t *)&s->isa.inst.val;
+  for (i = ilen-1; i >= 0; i --) {
+    *info_p += snprintf(*info_p, 4, " %02x", inst[i]);
+  }
+  int ilen_max = MUXDEF(CONFIG_ISA_x86, 8, 4);
+  int space_len = ilen_max - ilen;
+  if (space_len < 0) space_len = 0;
+  space_len = space_len * 3 + 1;
+  memset(*info_p, ' ', space_len);
+  *info_p += space_len;
+  void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
+  disassemble(*info_p, start_p + psize - *info_p,
+      MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst.val, ilen);
+  * info_p = g_mem_;
+}
+#endif
 
 static void exec_once(Decode *s, vaddr_t pc) {
   s->pc = pc;
@@ -43,23 +93,12 @@ static void exec_once(Decode *s, vaddr_t pc) {
   cpu.pc = s->dnpc;
 #ifdef CONFIG_ITRACE
   char *p = s->logbuf;
-  p += snprintf(p, sizeof(s->logbuf), FMT_WORD ":", s->pc);
-  int ilen = s->snpc - s->pc;
-  int i;
-  uint8_t *inst = (uint8_t *)&s->isa.inst.val;
-  for (i = ilen - 1; i >= 0; i --) {
-    p += snprintf(p, 4, " %02x", inst[i]);
-  }
-  int ilen_max = MUXDEF(CONFIG_ISA_x86, 8, 4);
-  int space_len = ilen_max - ilen;
-  if (space_len < 0) space_len = 0;
-  space_len = space_len * 3 + 1;
-  memset(p, ' ', space_len);
-  p += space_len;
-
-  void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
-  disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
-      MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst.val, ilen);
+//trace once instruction
+  trace_once(s,&p,p, sizeof(s->logbuf));
+#endif
+#ifdef CONFIG_MTRACE
+//trace once instruction
+  trace_once(s,g_mem_p,g_mem_, sizeof(g_mem_info));
 #endif
 }
 
@@ -83,6 +122,8 @@ static void statistic() {
   else Log("Finish running in less than 1 us and can not calculate the simulation frequency");
 }
 
+
+//if program run error,print register infomation and so on
 void assert_fail_msg() {
   isa_reg_display();
   statistic();
@@ -99,7 +140,6 @@ void cpu_exec(uint64_t n) {
   }
 
   uint64_t timer_start = get_time();
-
   execute(n);
 
   uint64_t timer_end = get_time();
@@ -107,13 +147,15 @@ void cpu_exec(uint64_t n) {
 
   switch (nemu_state.state) {
     case NEMU_RUNNING: nemu_state.state = NEMU_STOP; break;
-
     case NEMU_END: case NEMU_ABORT:
       Log("nemu: %s at pc = " FMT_WORD,
           (nemu_state.state == NEMU_ABORT ? ANSI_FMT("ABORT", ANSI_FG_RED) :
            (nemu_state.halt_ret == 0 ? ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN) :
             ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED))),
           nemu_state.halt_pc);
+        if(nemu_state.state != NEMU_ABORT && nemu_state.halt_ret != 0){
+          ringbuf_dispaly();
+        }
       // fall through
     case NEMU_QUIT: statistic();
   }
