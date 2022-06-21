@@ -9,10 +9,10 @@ uint8_t* new_space(int size);
 typedef struct {
   const char *name;
   // we treat ioaddr_t as paddr_t here
-  paddr_t low;
-  paddr_t high;
-  void *space;
-  io_callback_t callback;
+  paddr_t low;//start addr
+  paddr_t high;//end addr
+  void *space;//target space
+  io_callback_t callback;//callback
 } IOMap;
 
 static inline bool map_inside(IOMap *map, paddr_t addr) {

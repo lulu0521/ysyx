@@ -10,16 +10,29 @@ $(BINARY): compile_git
 # Some convenient rules
 
 override ARGS ?= --log=$(BUILD_DIR)/nemu-log.txt
+override ARGS += --ftrace=$(BUILD_DIR)/frtace.txt
+#override ARGS += --batch
 override ARGS += $(ARGS_DIFF)
 
 # Command to execute NEMU
 IMG ?=
-NEMU_EXEC := $(BINARY) $(ARGS) $(IMG)
+ELF ?=
+ifeq ($(IMG)$(ELF),)
+NEMU_EXEC := $(BINARY) $(ARGS)
+else
+	ifeq ($(IMG),)
+	NEMU_EXEC := @echo "Running ELF!!!"; $(BINARY) $(ARGS) --e $(ELF)
+	else
+	NEMU_EXEC := $(BINARY) $(ARGS) $(IMG)
+	endif
+endif
+
 
 run-env: $(BINARY) $(DIFF_REF_SO)
 
 run: run-env
 	$(call git_commit, "run NEMU")
+	@echo "Command: $(NEMU_EXEC)"
 	$(NEMU_EXEC)
 
 gdb: run-env

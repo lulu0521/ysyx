@@ -4,6 +4,7 @@
 #include <locale.h>
 #include "../monitor/sdb/watchpoint.h"
 #include "../monitor/sdb/sdb.h"
+#include <elf.h>
 
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
@@ -26,6 +27,11 @@ char g_mem_info[256];
 char *g_mem_ = g_mem_info;
 char *g_mem = g_mem_info;
 char **g_mem_p = &g_mem;
+/*===========ftrace arg==============*/
+int j_flag = 0;
+char g_ftrace_info[128];
+char *g_ftrace = g_ftrace_info;
+
 
 void device_update();
 
@@ -38,6 +44,7 @@ void ringbuf_dispaly(){
     printf("%s\n",iringbuf[i]);
   }
 }
+
 
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
@@ -54,6 +61,14 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
   if (CONFIG_MTRACE_COND) { log_write("%s\n", g_mem_); }
 #endif
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
+
+#ifdef CONFIG_FTRACE
+  if(j_flag==1){
+    j_flag = 0;
+    ftrace_write("%s\n",g_ftrace);
+  }
+#endif
+
 #if 0
   WP *p = scan_WP();
   if(p != NULL){
@@ -64,7 +79,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #endif
 }
 
-#ifdef CONFIG_TRACE
+#if defined(CONFIG_ITRACE) || defined(CONFIG_MTRACE) 
 void trace_once(Decode *s,char** info_p,char *start_p, size_t psize){
   *info_p += snprintf(*info_p,start_p + psize - *info_p, FMT_WORD ":", s->pc);
   int ilen = s->snpc - s->pc;
@@ -86,6 +101,31 @@ void trace_once(Decode *s,char** info_p,char *start_p, size_t psize){
 }
 #endif
 
+#ifdef CONFIG_FTRACE
+void ftrace(Decode *s,char* info_p){
+  extern int symtab_num;
+  extern Elf32_Sym *symtab;
+  extern char *strtab;
+  int i;
+  
+    //printf("%d=======\n",symtab_num);
+  for(i=0;i<symtab_num;i++){
+      if(symtab[i].st_info%16==STT_FUNC){
+        if(s->dnpc>=symtab[i].st_value && s->dnpc<symtab[i].st_value+symtab[i].st_size){
+          if(s->dnpc==symtab[i].st_value){
+          sprintf(info_p,"0x%x: call[ %s @0x%x ]\n",s->pc,strtab+symtab[i].st_name,s->dnpc);
+          //printf("%s\n",strtab+symtab[i].st_name);
+          }
+          else{
+          sprintf(info_p,"0x%x: ret[ %s ]\n",s->pc,strtab+symtab[i].st_name);
+        }
+        }
+        
+      }
+    }
+}
+#endif
+
 static void exec_once(Decode *s, vaddr_t pc) {
   s->pc = pc;
   s->snpc = pc;
@@ -99,6 +139,10 @@ static void exec_once(Decode *s, vaddr_t pc) {
 #ifdef CONFIG_MTRACE
 //trace once instruction
   trace_once(s,g_mem_p,g_mem_, sizeof(g_mem_info));
+#endif
+#ifdef CONFIG_FTRACE
+  if(j_flag==1)
+    ftrace(s,g_ftrace); 
 #endif
 }
 

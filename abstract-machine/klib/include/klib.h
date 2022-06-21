@@ -1,5 +1,8 @@
-#ifndef KLIB_H__
-#define KLIB_H__
+//#ifndef KLIB_H__
+//#define KLIB_H__
+
+#ifndef __NATIVE_USE_KLIB__
+#define __NATIVE_USE_KLIB__
 
 #include <am.h>
 #include <stddef.h>
