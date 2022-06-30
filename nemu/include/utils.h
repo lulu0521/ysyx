@@ -63,6 +63,18 @@ uint64_t get_time();
   } while (0) \
 )
 
+#define dtrace_write(...) IFDEF(CONFIG_TARGET_NATIVE_ELF, \
+  do { \
+    extern FILE* dtrace_fp; \
+    extern bool log_enable(); \
+    if (log_enable()) { \
+      fprintf(dtrace_fp, __VA_ARGS__); \
+      fflush(dtrace_fp); \
+    } \
+  } while (0) \
+)
+
+
 #define _Log(...) \
   do { \
     printf(__VA_ARGS__); \

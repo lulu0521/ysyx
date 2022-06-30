@@ -5,6 +5,7 @@
 void init_rand();
 void init_log(const char *log_file);
 void init_ftrace_fp(const char *log_file);
+void init_dtrace_fp(const char *log_file);
 void init_mem();
 void init_difftest(char *ref_so_file, long img_size, int port);
 void init_device();
@@ -32,6 +33,7 @@ static char *diff_so_file = NULL;
 static char *img_file = NULL;
 static char *elf_file =NULL;
 static char *ftrace_file =NULL;
+static char *dtrace_file =NULL;
 static int difftest_port = 1234;
 /*
 typedef struct {
@@ -195,10 +197,11 @@ static int parse_args(int argc, char *argv[]) {
     {"help"     , no_argument      , NULL, 'h'},
     {"elf"      , required_argument, NULL, 'e'},
     {"ftrace"   , required_argument, NULL, 'f'},
+    {"dtrace"   , required_argument, NULL, 'D'},
     {0          , 0                , NULL,  0 },
   };
   int o;
-  while ( (o = getopt_long(argc, argv, "-bhl:d:p:e:", table, NULL)) != -1) {
+  while ( (o = getopt_long(argc, argv, "-bhl:d:p:e:D:f:", table, NULL)) != -1) {
     switch (o) {
       case 'b': sdb_set_batch_mode(); break;
       case 'p': sscanf(optarg, "%d", &difftest_port); break;
@@ -206,6 +209,7 @@ static int parse_args(int argc, char *argv[]) {
       case 'd': diff_so_file = optarg; break;
       case 'e': elf_file = optarg; break;
       case 'f': ftrace_file = optarg; break;
+      case 'D': dtrace_file = optarg; break;
       case 1: img_file = optarg; return 0;
       default:
         printf("Usage: %s [OPTION...] IMAGE [args]\n\n", argv[0]);
@@ -215,6 +219,7 @@ static int parse_args(int argc, char *argv[]) {
         printf("\t-p,--port=PORT          run DiffTest with port PORT\n");
         printf("\t-e,--elf                no .elf file");///////////
         printf("\t-f,--ftrace             output ftrace to ftrace_file");
+        printf("\t-D,--dtrace             output ftrace to dtrace_file");
         printf("\n");
         exit(0);
     }
@@ -235,6 +240,8 @@ void init_monitor(int argc, char *argv[]) {
   init_log(log_file);
 
   init_ftrace_fp(ftrace_file);
+
+  init_dtrace_fp(dtrace_file);
   /* Initialize memory. */
   init_mem();
 

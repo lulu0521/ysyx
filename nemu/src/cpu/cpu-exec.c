@@ -5,6 +5,7 @@
 #include "../monitor/sdb/watchpoint.h"
 #include "../monitor/sdb/sdb.h"
 #include <elf.h>
+#include <device/map.h>
 
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
@@ -31,6 +32,12 @@ char **g_mem_p = &g_mem;
 int j_flag = 0;
 char g_ftrace_info[128];
 char *g_ftrace = g_ftrace_info;
+/*===========dtrace arg==========*/
+vaddr_t data_addr = 0;
+int data_flag=0;
+int dtrace_flag = 0;
+char g_dtrace_info[128];
+char* g_dtrace = g_dtrace_info;
 
 
 void device_update();
@@ -60,6 +67,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_MTRACE_COND
   if (CONFIG_MTRACE_COND) { log_write("%s\n", g_mem_); }
 #endif
+
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 
 #ifdef CONFIG_FTRACE
@@ -67,6 +75,19 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
     j_flag = 0;
     ftrace_write("%s\n",g_ftrace);
   }
+#endif
+
+#ifdef CONFIG_DTRACE
+  if(data_flag == 1 ){
+    if(dtrace_flag==1){
+      data_flag = 0;
+      dtrace_flag=0;
+    dtrace_write("%s\n", g_dtrace);
+  }else{
+    data_flag = 0;
+  }
+ }   
+  
 #endif
 
 #if 0
@@ -107,25 +128,38 @@ void ftrace(Decode *s,char* info_p){
   extern Elf32_Sym *symtab;
   extern char *strtab;
   int i;
-  
-    //printf("%d=======\n",symtab_num);
+  // printf("%d",symtab_num); 
   for(i=0;i<symtab_num;i++){
-      if(symtab[i].st_info%16==STT_FUNC){
+   
+      if(symtab[i].st_info%16==STT_FUNC){  
         if(s->dnpc>=symtab[i].st_value && s->dnpc<symtab[i].st_value+symtab[i].st_size){
           if(s->dnpc==symtab[i].st_value){
           sprintf(info_p,"0x%x: call[ %s @0x%x ]\n",s->pc,strtab+symtab[i].st_name,s->dnpc);
-          //printf("%s\n",strtab+symtab[i].st_name);
           }
           else{
           sprintf(info_p,"0x%x: ret[ %s ]\n",s->pc,strtab+symtab[i].st_name);
         }
-        }
-        
+        }   
       }
     }
 }
 #endif
 
+#ifdef CONFIG_DTRACE
+  void dtrace(Decode *s){
+    int i;
+    extern int nr_map;
+    extern IOMap maps[NR_MAP];
+    for(i=0;i<nr_map;i++){
+       dtrace_flag = map_inside(&maps[i],data_addr);
+      if(dtrace_flag ==1){
+        sprintf(g_dtrace,"0x%x  %s\n",s->pc,maps[i].name );
+        //printf("%s",g_dtrace);
+        return;
+      }
+    }
+  }
+#endif
 static void exec_once(Decode *s, vaddr_t pc) {
   s->pc = pc;
   s->snpc = pc;
@@ -136,13 +170,22 @@ static void exec_once(Decode *s, vaddr_t pc) {
 //trace once instruction
   trace_once(s,&p,p, sizeof(s->logbuf));
 #endif
+
 #ifdef CONFIG_MTRACE
 //trace once instruction
   trace_once(s,g_mem_p,g_mem_, sizeof(g_mem_info));
 #endif
+
 #ifdef CONFIG_FTRACE
-  if(j_flag==1)
-    ftrace(s,g_ftrace); 
+  if(j_flag==1){
+    ftrace(s,g_ftrace);
+  } 
+#endif
+
+#ifdef CONFIG_DTRACE
+  if(data_flag==1){
+    dtrace(s);
+  }
 #endif
 }
 

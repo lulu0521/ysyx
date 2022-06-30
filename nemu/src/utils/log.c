@@ -4,6 +4,7 @@
 extern uint64_t g_nr_guest_inst;
 FILE *log_fp = NULL;
 FILE *ftrace_fp = NULL;
+FILE *dtrace_fp = NULL;
 
 void init_log(const char *log_file) {
   log_fp = stdout;
@@ -24,6 +25,17 @@ void init_ftrace_fp(const char *ftrace_file) {
     ftrace_fp = stdout;
   }
 }
+
+void init_dtrace_fp(const char *dtrace_file) {
+  if (dtrace_file) {
+    FILE *fp = fopen(dtrace_file, "w");
+    Assert(fp, "Can not ftrace log open '%s'", dtrace_file);
+    dtrace_fp = fp;
+  } else {
+    ftrace_fp = stdout;
+  }
+}
+
 
 bool log_enable() {
   return MUXDEF(CONFIG_TRACE, (g_nr_guest_inst >= CONFIG_TRACE_START) &&
