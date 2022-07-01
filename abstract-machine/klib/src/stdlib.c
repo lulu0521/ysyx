@@ -42,10 +42,10 @@ void *malloc(size_t size) {
     old.ptr = heap.start;
   }
   size = ROUNDUP(size,sizeof(uintptr_t));
-  old.size = size;
   old.ptr += old.size;
-  char *ret = old.ptr;
   assert((uintptr_t)heap.start <= (uintptr_t)old.ptr && (uintptr_t)old.ptr < (uintptr_t)heap.end);
+  char *ret = old.ptr;
+  old.size = size;
   return ret;
 
 #if !(defined(__ISA_NATIVE__) && defined(__NATIVE_USE_KLIB__))

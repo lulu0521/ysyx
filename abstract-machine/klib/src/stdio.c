@@ -104,6 +104,7 @@ int printf(const char *fmt, ...) {
           }
           case'd':{
             char* str_num = out_num(va_arg(ap,int),10,leader_m, minwidth);
+            putch ('=');
             while(*str_num!='\0'){
               putch (*str_num);
               str_num++; 
