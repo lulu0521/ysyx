@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <common.h>
 
 #if defined(MULTIPROGRAM) && !defined(TIME_SHARING)

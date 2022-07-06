@@ -38,7 +38,8 @@ int data_flag=0;
 int dtrace_flag = 0;
 char g_dtrace_info[128];
 char* g_dtrace = g_dtrace_info;
-
+/*===========etrace arg==========*/
+int etrace_flag=0;
 
 void device_update();
 
@@ -170,21 +171,24 @@ static void exec_once(Decode *s, vaddr_t pc) {
 //trace once instruction
   trace_once(s,&p,p, sizeof(s->logbuf));
 #endif
-
 #ifdef CONFIG_MTRACE
 //trace once instruction
   trace_once(s,g_mem_p,g_mem_, sizeof(g_mem_info));
 #endif
-
 #ifdef CONFIG_FTRACE
   if(j_flag==1){
     ftrace(s,g_ftrace);
   } 
 #endif
-
 #ifdef CONFIG_DTRACE
   if(data_flag==1){
     dtrace(s);
+  }
+#endif
+#ifdef CONFIG_ETRACE
+  if(etrace_flag==1){
+    printf("%ld\n",cpu.mcause);
+    etrace_flag=0;
   }
 #endif
 }
