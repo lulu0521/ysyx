@@ -187,7 +187,10 @@ static void exec_once(Decode *s, vaddr_t pc) {
 #endif
 #ifdef CONFIG_ETRACE
   if(etrace_flag==1){
-    printf("%ld\n",cpu.mcause);
+    if(cpu.mcause>-1&&cpu.mcause<20)
+    printf("STRACE:%ld\n",cpu.mcause);
+    else
+    printf("ETRACE:%ld\n",cpu.mcause);
     etrace_flag=0;
   }
 #endif

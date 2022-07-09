@@ -11,9 +11,21 @@
 
 extern size_t ramdisk_read(void *buf, size_t offset, size_t len);
 static uintptr_t loader(PCB *pcb, const char *filename) {
+  #if defined(__ISA_AM_NATIVE__)
+  # define EXPECT_TYPE EM_X86_64
+  #elif defined(__ISA_X86__)
+  # define EXPECT_TYPE EM_X86_64
+  #elif defined(__ISA_MIPS32__)
+  # define EXPECT_TYPE EM_MIPS_X
+  #elif defined(__ISA_RISCV32__) || defined(__ISA_RISCV64__)
+  # define EXPECT_TYPE EM_RISCV
+  #else
+  # error Unsupported ISA
+  #endif
   Elf_Ehdr elf;
   ramdisk_read(&elf, 0, sizeof(Elf_Ehdr));
   assert( *(uint32_t *)elf.e_ident == 0x464c457f);
+  assert(elf.e_machine == EXPECT_TYPE);
   int i; 
   for(i=0;i<elf.e_phnum;i++){
     Elf_Phdr pro_h;

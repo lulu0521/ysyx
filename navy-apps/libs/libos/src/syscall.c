@@ -41,11 +41,11 @@
 #endif
 
 intptr_t _syscall_(intptr_t type, intptr_t a0, intptr_t a1, intptr_t a2) {
-  register intptr_t _gpr1 asm (GPR1) = type;
-  register intptr_t _gpr2 asm (GPR2) = a0;
-  register intptr_t _gpr3 asm (GPR3) = a1;
-  register intptr_t _gpr4 asm (GPR4) = a2;
-  register intptr_t ret asm (GPRx);
+  register intptr_t _gpr1 asm (GPR1) = type;//a7
+  register intptr_t _gpr2 asm (GPR2) = a0;//a0
+  register intptr_t _gpr3 asm (GPR3) = a1;//a1
+  register intptr_t _gpr4 asm (GPR4) = a2;//a2
+  register intptr_t ret asm (GPRx);//a0
   asm volatile (SYSCALL : "=r" (ret) : "r"(_gpr1), "r"(_gpr2), "r"(_gpr3), "r"(_gpr4));
   return ret;
 }
@@ -60,8 +60,9 @@ int _open(const char *path, int flags, mode_t mode) {
   return 0;
 }
 
+
 int _write(int fd, void *buf, size_t count) {
-  _exit(SYS_write);
+  _syscall_(SYS_write,fd,buf,count);
   return 0;
 }
 
