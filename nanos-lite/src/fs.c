@@ -24,24 +24,24 @@ size_t invalid_write(const void *buf, size_t offset, size_t len) {
   return 0;
 }
 
-size_t write_std(int fd,const void *buf,size_t len){
-  int i=0;
-  char* buf_ = (char*)buf;
-  if(fd==1 || fd==2){
-    for(i=0;i<len && buf_!=NULL;i++){
-    if( *buf_ != '\0'){
-      putch(*buf_);
-      buf_++;
-    } 
-  }
-  }
-  return i;
-}
+
+//size_t write_std(const void *buf,size_t offset,size_t len){
+//  int i=0;
+//  char* buf_ = (char*)buf;
+//  for(i=0;i<len && buf_!=NULL;i++){
+//    if( *buf_ != '\0'){
+//      putch(*buf_);
+//      buf_++;
+//    } 
+//  }
+//  return i;
+//}
+size_t serial_write(const void *buf, size_t offset, size_t len);
 /* This is the information about all files in disk. */
 static Finfo file_table[] __attribute__((used)) = {
   [FD_STDIN]  = {"stdin", 0, 0, invalid_read, invalid_write},
-  [FD_STDOUT] = {"stdout", 0, 0, invalid_read, invalid_write},
-  [FD_STDERR] = {"stderr", 0, 0, invalid_read, invalid_write},
+  [FD_STDOUT] = {"stdout", 0, 0, invalid_read, serial_write},
+  [FD_STDERR] = {"stderr", 0, 0, invalid_read, serial_write},
 #include "files.h"
 };
 
@@ -53,7 +53,7 @@ int fs_open(const char *pathname, int flags, int mode){
     fd = strcmp(file_table[i].name,pathname);
     if(fd==0){
       file_table[i].f_offset = 0;
-      printf("The strace is SYS_open,The open file is %s",file_table[fd].name);
+      printf("The strace is SYS_open,The open file is %s\n",file_table[fd].name);
       return i;
     }
   }
@@ -78,7 +78,7 @@ size_t fs_write(int fd, const void *buf, size_t len){
   int len_ = len;
     switch(fd){
       case FD_STDOUT:
-      case FD_STDERR:len_ = write_std(fd,buf,len_);break;
+      case FD_STDERR:len_ = file_table[fd].write(buf,file_table[fd].disk_offset+file_table[fd].f_offset,len_);break;
       default:
       if(len_==0 || file_table[fd].f_offset>=file_table[fd].size)
         assert(0);
