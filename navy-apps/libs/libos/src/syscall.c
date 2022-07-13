@@ -56,33 +56,43 @@ void _exit(int status) {
 }
 
 int _open(const char *path, int flags, mode_t mode) {
-  _exit(SYS_open);
-  return 0;
+  return _syscall_(SYS_open,(intptr_t)path,flags,mode);
+ // return 0;
 }
 
 
 int _write(int fd, void *buf, size_t count) {
-  _syscall_(SYS_write,fd,buf,count);
-  return 0;
+  return _syscall_(SYS_write,fd,(intptr_t)buf,count);
+  //return 0;
 }
 
+extern char _end;
+char *pro_break = &_end;//declare pro_break
 void *_sbrk(intptr_t increment) {
-  return (void *)-1;
+  char *pro_b_re_old = pro_break;
+  char *pro_b_new = pro_b_re_old+ increment;
+  intptr_t num = _syscall_(SYS_brk,0,0,0);
+  if(num==0){
+    pro_break = pro_b_new;
+    return pro_b_re_old;
+  }else{
+    return (void *)-1;
+  }
 }
 
 int _read(int fd, void *buf, size_t count) {
-  _exit(SYS_read);
-  return 0;
+  return _syscall_(SYS_read,fd,(intptr_t)buf,count);
+  //return 0;
 }
 
 int _close(int fd) {
-  _exit(SYS_close);
+  _syscall_(SYS_close,fd,0,0);
   return 0;
 }
 
 off_t _lseek(int fd, off_t offset, int whence) {
-  _exit(SYS_lseek);
-  return 0;
+  return _syscall_(SYS_lseek,fd, offset,whence);
+  //return 0;
 }
 
 int _gettimeofday(struct timeval *tv, struct timezone *tz) {

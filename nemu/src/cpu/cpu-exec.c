@@ -154,7 +154,7 @@ void ftrace(Decode *s,char* info_p){
     for(i=0;i<nr_map;i++){
        dtrace_flag = map_inside(&maps[i],data_addr);
       if(dtrace_flag ==1){
-        sprintf(g_dtrace,"0x%x  %s\n",s->pc,maps[i].name );
+        sprintf(g_dtrace,"0x%lx  %s\n",s->pc,maps[i].name );
         //printf("%s",g_dtrace);
         return;
       }
@@ -187,10 +187,11 @@ static void exec_once(Decode *s, vaddr_t pc) {
 #endif
 #ifdef CONFIG_ETRACE
   if(etrace_flag==1){
-    if(cpu.mcause>-1&&cpu.mcause<20)
-    printf("STRACE:%ld\n",cpu.mcause);
-    else
-    printf("ETRACE:%ld\n",cpu.mcause);
+    if(cpu.mcause>-1&&cpu.mcause<20){
+      printf("STRACE:%ld\n",cpu.mcause);
+    }else{
+      printf("ETRACE:%ld\n",cpu.mcause);
+    }
     etrace_flag=0;
   }
 #endif

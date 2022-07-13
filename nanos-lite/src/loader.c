@@ -1,5 +1,6 @@
 #include <proc.h>
 #include <elf.h>
+#include <fs.h>
 #ifdef __LP64__
 # define Elf_Ehdr Elf64_Ehdr
 # define Elf_Phdr Elf64_Phdr
@@ -9,7 +10,11 @@
 #endif
 
 
-extern size_t ramdisk_read(void *buf, size_t offset, size_t len);
+int    fs_open(const char *pathname, int flags, int mode);
+size_t fs_read(int fd, void *buf, size_t len);
+int    fs_close(int fd);
+size_t fs_lseek(int fd, size_t offset, int whence);
+
 static uintptr_t loader(PCB *pcb, const char *filename) {
   #if defined(__ISA_AM_NATIVE__)
   # define EXPECT_TYPE EM_X86_64
@@ -22,24 +27,29 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
   #else
   # error Unsupported ISA
   #endif
+  int fd = fs_open(filename,0,0);
   Elf_Ehdr elf;
-  ramdisk_read(&elf, 0, sizeof(Elf_Ehdr));
+  fs_read(fd,&elf,sizeof(elf));
   assert( *(uint32_t *)elf.e_ident == 0x464c457f);
   assert(elf.e_machine == EXPECT_TYPE);
   int i; 
   for(i=0;i<elf.e_phnum;i++){
-    Elf_Phdr pro_h;
-    ramdisk_read(&pro_h,elf.e_phoff+i*elf.e_phentsize,elf.e_phentsize);
-    if(pro_h.p_type==PT_LOAD){
-      ramdisk_read((void *)pro_h.p_vaddr,pro_h.p_offset,pro_h.p_memsz);
-      memset((void *)(pro_h.p_vaddr+pro_h.p_filesz),0,pro_h.p_memsz-pro_h.p_filesz);
+    Elf_Phdr ph;
+    fs_lseek(fd,elf.e_phoff + i*elf.e_phentsize,SEEK_SET);
+    fs_read(fd,&ph,elf.e_phentsize);
+    if(ph.p_type==PT_LOAD){
+      fs_lseek(fd,ph.p_offset,SEEK_SET);
+      fs_read(fd,(void *)ph.p_vaddr,ph.p_memsz);
+      memset((void *)(ph.p_vaddr+ph.p_filesz),0,ph.p_memsz-ph.p_filesz);
     }
   }
-  return (uintptr_t)elf.e_entry;
+  //printf("%d\n",elf.e_entry);
+  fs_close(fd);
+  return elf.e_entry;
 }
 
 void naive_uload(PCB *pcb, const char *filename) {
-  uintptr_t entry = loader(pcb, filename);
+  uintptr_t entry = loader(pcb,filename );
   Log("Jump to entry = %p", entry);
   ((void(*)())entry) ();
 }

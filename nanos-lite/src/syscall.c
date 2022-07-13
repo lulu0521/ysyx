@@ -1,35 +1,30 @@
 #include <common.h>
 #include "syscall.h"
 
-
-size_t write(int fd, const void *buf, size_t count){
-  int i=0;
-  char* buf_= (char*)buf;
-  if(fd==1 || fd==2){
-    for(i=0;i<count&&buf_!=NULL;i++){
-      if(*buf_ !='\0'){
-        putch(*buf_);
-        buf_ +=1;
-      }
-    }
-  }
-  return i;
-}
-
+int fs_open(const char *pathname, int flags, int mode);
+size_t fs_read(int fd, void *buf, size_t len);
+int fs_close(int fd);
+size_t fs_write(int fd, const void *buf, size_t len);
+size_t fs_lseek(int fd, size_t offset, int whence);
+extern uintptr_t *program_break;
 void do_syscall(Context *c) {
   uintptr_t a[4];
   a[0] = c->GPR1;
+  a[1] = c->GPR2;
+  a[2] = c->GPR3;
+  a[3] = c->GPR4;
+  //printf("%d\n",a[0]);
   switch (a[0]) {
     case SYS_exit: halt(0);break;
     case SYS_yield: yield();c->GPRx = 0;break;
-    //case SYS_open:break;
-    //case SYS_read:break;
-    case SYS_write: c->GPRx=write(c->GPR2,(const void *)c->GPR3,c->GPR4);break;
+    case SYS_open:c->GPRx=fs_open((const char*)c->GPR2,c->GPR3,c->GPR4);break;
+    case SYS_read:c->GPRx=fs_read(c->GPR2,(void *)c->GPR3,c->GPR4);break;
+    case SYS_write:c->GPRx=fs_write(c->GPR2,(const void *)c->GPR3,c->GPR4);break;
     //case SYS_kill:break;
     //case SYS_getpid:break;
-    //case SYS_close:break;
-    //case SYS_lseek:break;
-    case SYS_brk:break;
+    case SYS_close:c->GPRx=fs_close(c->GPR2);break;
+    case SYS_lseek:c->GPRx =fs_lseek(c->GPR2,c->GPR3,c->GPR4);break;
+    case SYS_brk: c->GPRx = 0;break;
     //case SYS_fstat:break;
     //case SYS_time:break;
     //case SYS_signal:break;

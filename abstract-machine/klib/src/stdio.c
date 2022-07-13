@@ -4,272 +4,129 @@
 #include <stdarg.h>
 
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
-char str[11];
-char tab[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
 
-char *out_num(long num,int base,char leader_m,int minwidth){
-  int i=0;
-  int len=0;
-  long num_;
-  //num_ is positive num
-  if(num<0){
-    num_ = -num;
-  }else{
-    num_ = num;
+static char* print_num(char* out, uint64_t num, uint64_t base, int len, char ch){
+  if(num == 0) {
+    for(int i = 0; i < len; i++) *out++ = ch;
+    return out;
   }
-  //num_ = 0
-  if(num_==0){
-    if(minwidth==0){
-      str[0] = '0';
-      str[1] = '\0';
-    } else{
-      str[minwidth]   = '\0';
-      str[minwidth-1] = '0' ;
-      int width = minwidth - 2;
-      for(;width>=0;width--){
-        str[width] = leader_m;
-      }
-    }
-  }
-  //num_ != 0
-  else{
-    for(i=1;num_/i!=0;i*=base)
-    len++;
-    if(len<minwidth){
-      str[minwidth]   = '\0';
-      for(;num_!=0;num_/= base){
-        minwidth -= 1;
-        str[minwidth] = tab[num_ % base];
-      }
-      for(minwidth-=1;minwidth!=0;minwidth--){
-        str[minwidth] = leader_m;
-      }
-      if(num>0) str[minwidth] = leader_m;
-      else str[minwidth] = '-';
-    }else{
-      if(num>0){
-        str[len] = '\0';
-        for(len-=1;len>=0;len--){
-          str[len] = tab[num_%base];
-          num_ /= base;
-        }
-      }else{
-        str[len+1] = '\0';
-        for(;len!=0;len--){
-          str[len] = tab[num_%base];
-          num_ /= base;
-        }
-        str[len] = '-';
-      }
-    }
-  }
-  return str;
+  out = print_num(out, num / base, base, len - 1, ch);
+  *(out++) = "0123456789abcdef"[num%base];
+  return out;
 }
 
+static char* _fill(char* out, char ch, int len){
+  for(int i = 0; i < len; i ++) *out++ = ch;
+  return out;
+}
 
 int printf(const char *fmt, ...) {
-  va_list ap;
-  va_start(ap,fmt);
-  while(*fmt!='\0'){
-    switch(*fmt){
-      case '%':{  
-        fmt++;
-        int minwidth = 0;
-        char leader_m = ' ';
-        //leader mark
-        if(*fmt == '0'){
-          leader_m = '0';
-          fmt++;
-        }
-        //the length of data
-        while(*fmt>'0' && *fmt<'9'){
-          minwidth *= 10;
-          minwidth += *fmt -'0';
-          fmt++;
-        }
-        switch(*fmt){
-          case'c':{
-            putch (va_arg(ap,int));
-            fmt++;
-            break;
-          }
-          case's':{
-            char* str= va_arg(ap,char*);
-            while(*str!='\0' && str!=NULL){
-              putch (*str);
-              str++; 
-            }
-            fmt++;
-            break;
-          }
-          case'd':{
-            char* str_num = out_num(va_arg(ap,int),10,leader_m, minwidth);
-            putch ('=');
-            while(*str_num!='\0'){
-              putch (*str_num);
-              str_num++; 
-            }
-            fmt++;
-            break;
-          }
-          case'o':{
-            char* str_num = out_num(va_arg(ap,unsigned int),8,leader_m, minwidth);
-            while(*str_num!='\0'){
-              putch (*str_num);
-              str_num++; 
-            }
-            fmt++;
-            break;
-          }
-          case'u':{
-            char* str_num = out_num(va_arg(ap,unsigned int),10,leader_m, minwidth);
-            while(*str_num!='\0'){
-              putch (*str_num);
-              str_num++; 
-            }
-            fmt++;
-            break;
-          }
-          case'x':{
-            char* str_num = out_num(va_arg(ap,unsigned int),16,leader_m, minwidth);
-            while(*str_num!='\0'){
-              putch (*str_num);
-              str_num++; 
-            }
-            fmt++;
-            break;
-          }
-          case'%':{
-            putch(*fmt);
-            fmt++;
-            break;
-          }
-        }
-        break;
-      } 
-      default:{
-      putch(*fmt);
-      fmt++;
-      break;
-      }
-    }
-    
-  }
-  va_end(ap);
+  va_list args;
+  va_start(args, fmt);
+  char buf[2048];
+  memset(buf, 0, sizeof(buf));
+  vsprintf(buf, fmt, args);
+  putstr(buf);
   return 0;
 }
 
 int vsprintf(char *out, const char *fmt, va_list ap) {
-  panic("Not implemented");
+  int idx = 0;
+  while(fmt[idx] != 0){
+    if(fmt[idx] != '%'){
+      *(out) = fmt[idx ++];
+      out ++;
+      continue;
+    }
+    idx++;
+    int val = 0;
+    uint32_t uval = 0;
+    uint64_t ulval = 0;
+    int64_t lval = 0;
+    char *tem_s;
+    char tem_c;
+    int width = 0;
+    int flag = 0;
+    int len = 0;
+    if(fmt[idx] == '0') { flag = 1; idx ++;}
+    else if(fmt[idx] == ' ') {flag = 2; idx ++;}
+    while(fmt[idx] >= '0' && fmt[idx] <= '9'){
+      width = width * 10 + fmt[idx] - '0';
+      idx ++;
+    }
+    if(fmt[idx] == 'l') {
+      flag |= 4;
+      idx ++;
+    }
+    switch(fmt[idx++]){
+      case 's': 
+          tem_s = va_arg(ap, char*);
+          len = strlen(tem_s);
+          if(flag == 1) out = _fill(out, '0', width - len > 0? width-len:0);
+          else if(flag == 2) out = _fill(out, ' ', width - len > 0? width-len:0);
+          strcpy(out, tem_s);
+          out += strlen(tem_s);
+          break;
+      case 'd':
+          if(flag & 4) lval = va_arg(ap, int64_t);
+          else val = va_arg(ap, int);
+          if(val < 0 || lval < 0) {
+            *(out++) = '-';
+            val = -val;
+          }
+          if(val == 0 && lval == 0) {
+            *(out++) = '0';
+            for(int i = 1; i < width; i++) *out++ = '0';
+          }
+          else {
+            if(flag & 1) out = print_num(out, flag & 4? lval:val, 10, len, '0');
+            else if(flag & 2) out = print_num(out, flag & 4? lval:val, 10, len, ' ');
+            else out = print_num(out, flag & 4? lval:val, 10, 0, 0);
+          }
+          break;
+      case 'c':
+          tem_c = va_arg(ap, int);
+          *out++ = tem_c;
+          break;
+      case 'p':
+      case 'x':
+          *out++ = '0';
+          *out++ = 'x';
+          if(flag & 4) ulval = va_arg(ap, uint64_t);
+          else uval = va_arg(ap, uint32_t);
+          if(ulval == 0 && uval == 0) {
+            *(out++) = '0';
+            for(int i = 1; i < width; i++) *out++ = '0';
+          }
+          else {
+            if(flag & 1) out = print_num(out, flag&4? ulval:uval, 16, len, '0');
+            else if(flag & 2) out = print_num(out, flag&4? ulval:uval, 16, len, ' ');
+            else out = print_num(out, flag&4? ulval:uval, 16, 0, 0);
+          }
+          break;
+      
+      default: putch(fmt[idx-1]); putch('\n'); assert(0);
+    }  
+  }
+  *out = 0;
+  return 0;
 }
 
 int sprintf(char *out, const char *fmt, ...) {
-  assert(out!=NULL);
-  va_list ap;
-  va_start(ap,fmt);
-  while(*fmt!='\0'){
-    switch(*fmt){
-      case '%':{  
-        fmt++;
-        int minwidth = 0;
-        char leader_m = ' ';
-        //leader mark
-        if(*fmt == '0'){
-          leader_m = '0';
-          fmt++;
-        }
-        //the length of data
-        while(*fmt>'0' && *fmt<'9'){
-          minwidth *= 10;
-          minwidth += *fmt -'0';
-          fmt++;
-        }
-        switch(*fmt){
-          case'c':{
-            *out = va_arg(ap,int);
-            fmt++;
-            out++;
-            break;
-          }
-          case's':{
-            char* str= va_arg(ap,char*);
-            while(*str!='\0'&&str!=NULL){
-              *out = *str;
-              out++;
-              str++; 
-            }
-            fmt++;
-            break;
-          }
-          case'd':{
-            char* str_num = out_num(va_arg(ap,int),10,leader_m, minwidth);
-            while(*str_num!='\0'){
-              *out = *str_num;
-              out++;
-              str_num++; 
-            }
-            fmt++;
-            break;
-          }
-          case'o':{
-            char* str_num = out_num(va_arg(ap,unsigned int),8,leader_m, minwidth);
-            while(*str_num!='\0'){
-              *out = *str_num;
-              out++;
-              str_num++; 
-            }
-            fmt++;
-            break;
-          }
-          case'u':{
-            char* str_num = out_num(va_arg(ap,unsigned int),10,leader_m, minwidth);
-            while(*str_num!='\0'){
-              *out = *str_num;
-              out++;
-              str_num++; 
-            }
-            fmt++;
-            break;
-          }
-          case'x':{
-            char* str_num = out_num(va_arg(ap,unsigned int),16,leader_m, minwidth);
-            while(*str_num!='\0'){
-              *out = *str_num;
-              out++;
-              str_num++; 
-            }
-            fmt++;
-            break;
-          }
-          case'%':{
-            *out = *fmt;
-            out++;
-            fmt++;
-            break;
-          }
-        }
-        break;
-      } 
-      default:{
-      *out = *fmt;
-      out++;
-      fmt++;
-      break;
-      }
-    }
-    
-  }
-  *out ='\0';
-  va_end(ap);
+  va_list args;
+  va_start(args, fmt);
+  vsprintf(out, fmt, args);
   return 0;
 }
 
 int snprintf(char *out, size_t n, const char *fmt, ...) {
-  panic("Not implemented");
+  assert(0);
+  return 0;
 }
 
 int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
-  panic("Not implemented");
+  assert(0);
+  return 0;
 }
 
 #endif
