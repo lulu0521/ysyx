@@ -24,18 +24,6 @@ size_t invalid_write(const void *buf, size_t offset, size_t len) {
   return 0;
 }
 
-
-//size_t write_std(const void *buf,size_t offset,size_t len){
-//  int i=0;
-//  char* buf_ = (char*)buf;
-//  for(i=0;i<len && buf_!=NULL;i++){
-//    if( *buf_ != '\0'){
-//      putch(*buf_);
-//      buf_++;
-//    } 
-//  }
-//  return i;
-//}
 size_t serial_write(const void *buf, size_t offset, size_t len);
 /* This is the information about all files in disk. */
 static Finfo file_table[] __attribute__((used)) = {
@@ -104,6 +92,8 @@ size_t fs_lseek(int fd, size_t offset, int whence){
     file_table[fd].f_offset = -1;
   return file_table[fd].f_offset;
 }
+
+
 
 void init_fs() {
   // TODO: initialize the size of /dev/fb

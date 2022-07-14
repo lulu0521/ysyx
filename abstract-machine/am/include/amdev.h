@@ -50,7 +50,6 @@ enum {
 };
 
 // GPU
-
 #define AM_GPU_TEXTURE  1
 #define AM_GPU_SUBTREE  2
 #define AM_GPU_NULL     0xffffffff

@@ -1,3 +1,3 @@
-NAME = libndl
-SRCS = NDL.c 
+NAME =time-test
+SRCS = main.c
 include $(NAVY_HOME)/Makefile
