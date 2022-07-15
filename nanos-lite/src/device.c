@@ -15,7 +15,7 @@ static const char *keyname[256] __attribute__((used)) = {
   AM_KEYS(NAME)
 };
 
-size_t serial_write(const void *buf, size_t offset, size_t len) {
+size_t serial_write(const void *buf, size_t offset, size_t len){
    int i=0;
   char* buf_ = (char*)buf;
   for(i=0;i<len && buf_!=NULL;i++){
@@ -28,7 +28,25 @@ size_t serial_write(const void *buf, size_t offset, size_t len) {
 }
 
 size_t events_read(void *buf, size_t offset, size_t len) {
-  return 0;
+  char* buf_ = (char*)buf;
+  AM_INPUT_CONFIG_T has_kbd;
+  AM_INPUT_KEYBRD_T kdb;
+  int vaild = 0;
+  has_kbd  = io_read(AM_INPUT_CONFIG);
+  //printf("%d\n",has_kbd.present);
+  if(has_kbd.present){
+    if(vaild<=len){
+      kdb = io_read(AM_INPUT_KEYBRD);
+      if(kdb.keycode!=AM_KEY_NONE){
+        if(kdb.keydown==1){
+         vaild += sprintf(buf_,"kd %s\n",keyname[kdb.keycode]);
+       }else{
+          vaild += sprintf(buf_,"ku %s\n",keyname[kdb.keycode]);
+        }
+      }
+    }
+  }
+  return vaild;
 }
 
 size_t dispinfo_read(void *buf, size_t offset, size_t len) {
