@@ -89,7 +89,7 @@ static int cmd_x(char *args){
   for(int j=0;j<i;j++){
     word_t val;
     val = paddr_read(addr + 4*j, 4);
-    printf("0x""%x ",val);
+    printf("0x""%lx ",val);
   }
   printf("\n");
   return 0;
