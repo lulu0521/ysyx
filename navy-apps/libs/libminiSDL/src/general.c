@@ -1,6 +1,8 @@
 #include <NDL.h>
-
+#include <assert.h>
+uint32_t s_time;
 int SDL_Init(uint32_t flags) {
+  s_time = NDL_GetTicks();
   return NDL_Init(flags);
 }
 

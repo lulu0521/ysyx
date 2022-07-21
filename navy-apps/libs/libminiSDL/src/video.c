@@ -3,18 +3,66 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 void SDL_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
   assert(dst && src);
   assert(dst->format->BitsPerPixel == src->format->BitsPerPixel);
+  int i;
+  int j;
+  int h;
+  int w;
+  if(srcrect==NULL){
+    for(i=0;i<src->h;i++){
+      for(j=0;j<src->w;j++){
+        *((uint32_t*)dst->pixels + (dstrect->y + i)*dst->w +dstrect->x + j) = *((uint32_t*)src->pixels + i*src->w + j);
+      }
+    }
+  }
+  if(dstrect==NULL){
+    for(i=0;i<srcrect->h;i++){
+      for(j=0;j<srcrect->w;j++){
+        *((uint32_t*)dst->pixels + i*dst->w +j) = *((uint32_t*)src->pixels + (srcrect->y+i)*src->w +srcrect->x+j);
+      }
+    }
+  } 
+  if(dstrect!=NULL && srcrect!=NULL){
+    int len = -1;
+    for(i=0;i<srcrect->h;i++){
+      for(j=0;j<srcrect->w;j++){
+        *((uint32_t*)dst->pixels + (dstrect->y + i)*dst->w + dstrect->x + j) = *((uint32_t*)src->pixels + (srcrect->y + i) * src->w + srcrect->x + j);
+      }
+    }
+  } 
 }
 
 void SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, uint32_t color) {
-  assert(0);
+  int i;
+  int j;
+  if(dstrect==NULL){
+    for(i=0;i<dst->h;i++){
+      for(j=0;j<dst->w;j++){
+        *((uint32_t*)dst->pixels + i*dst->w + j) = color;
+      }
+    }
+  }else{
+    for(i=0;i<dstrect->h;i++){
+      for(j=0;j<dstrect->w;j++){
+        *((uint32_t*)dst->pixels + (dstrect->y + i) * dst->w + dstrect->x + j ) = color;
+      }
+    }
+  }
 }
 
+void NDL_DrawRect(uint32_t *pixels, int x, int y, int w, int h);
 void SDL_UpdateRect(SDL_Surface *s, int x, int y, int w, int h) {
-  assert(0);
+  if(x==0 && y==0 && w==0 && h==0){
+    w = s->w;
+    h = s->h;
+    NDL_DrawRect((uint32_t *)s->pixels,x,y,w,h);
+  }else{
+    NDL_DrawRect((uint32_t *)s->pixels + y*s->w + x,x,y,w,h);
+  }
 }
 
 // APIs below are already implemented.
@@ -80,7 +128,7 @@ SDL_Surface* SDL_CreateRGBSurfaceFrom(void *pixels, int width, int height, int d
 
 void SDL_FreeSurface(SDL_Surface *s) {
   if (s != NULL) {
-    if (s->format != NULL) {
+    if (s->format != NULL) {    
       if (s->format->palette != NULL) {
         if (s->format->palette->colors != NULL) free(s->format->palette->colors);
         free(s->format->palette);
@@ -90,6 +138,7 @@ void SDL_FreeSurface(SDL_Surface *s) {
     if (s->pixels != NULL && !(s->flags & SDL_PREALLOC)) free(s->pixels);
     free(s);
   }
+  
 }
 
 SDL_Surface* SDL_SetVideoMode(int width, int height, int bpp, uint32_t flags) {
