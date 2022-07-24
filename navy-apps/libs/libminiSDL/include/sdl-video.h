@@ -21,13 +21,13 @@ typedef struct {
 
 typedef union {
   struct {
-    uint8_t r, g, b, a;
-  };
+    uint8_t  r,g,b,a ;//the red component in the range 0-255   the green component in the range 0-255
+  };				//the blue component in the range 0-255     the alpha component in the range 0-255
   uint32_t val;
 } SDL_Color;
 
 typedef struct {
-	int ncolors;
+	int ncolors;//the number of colors in the palette
 	SDL_Color *colors;
 } SDL_Palette;
 

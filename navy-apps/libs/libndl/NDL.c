@@ -5,32 +5,39 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <fcntl.h>
+
+
+#include <assert.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 static int evtdev = -1;
 static int fbdev = -1;
 static int screen_w = 0, screen_h = 0;
-struct timeval st;
+//struct timeval st;
+static int dpdev=-1;
+
 uint32_t NDL_GetTicks() {
   struct timeval et;
   gettimeofday(&et,NULL);
-  uint32_t tms = (et.tv_sec-st.tv_sec)*1000 +(et.tv_usec - st.tv_usec)/1000;
+  uint32_t tms = et.tv_sec*1000 +et.tv_usec/1000;
   return tms;
 }
 
 int NDL_PollEvent(char *buf, int len) {
   int fd;
   int rl=0;
-  fd = open("/dev/events",0,0);
-  rl = read(fd,buf,len);
-  close(fd);
+  //evtdev = open("/dev/events",0,0);
+  rl = read(evtdev,buf,len);
+  //close(evtdev);
   return rl;
 }
 
 void NDL_OpenCanvas(int *w, int *h) {
-  int fd_pd;
+
   char buf[32];
-  fd_pd = open("/proc/dispinfo",0,0);
-  read(fd_pd,buf,32);
-  close(fd_pd);
+  //dpdev = open("/proc/dispinfo",0,0);
+  read(dpdev,buf,32);
+  
   int i;
   int flag = 0;
   int a[2];//a[1] is height; a[0] ia the width
@@ -83,12 +90,12 @@ void NDL_DrawRect(uint32_t *pixels, int x, int y, int w, int h) {
   int fd;
   int i;
   size_t offset;
-  fd = open("/dev/fb",0,0);
+  //fbdev = open("/dev/fb",0,0);
   for(i=0;i<h;i++){
-    offset = lseek(fd,((y+i)*screen_w+x)*4,SEEK_SET);
-    write(fd,pixels+i*w,w*4);
+    offset = lseek(fbdev,((y+i)*screen_w+x)*4,SEEK_SET);
+    write(fbdev,pixels+i*w,w*4);
   }
-  close(fd);
+  //close(fbdev);
 }
 
 void NDL_OpenAudio(int freq, int channels, int samples) {
@@ -106,12 +113,22 @@ int NDL_QueryAudio() {
 }
 
 int NDL_Init(uint32_t flags) {
-  gettimeofday(&st,NULL);
+  //gettimeofday(&st,NULL);
   if (getenv("NWM_APP")) {
     evtdev = 3;
   }
+  evtdev=open("/dev/events",0);
+  dpdev=open("/proc/dispinfo",0);
+  fbdev=open("/dev/fb",0);
   return 0;
 }
 
 void NDL_Quit() {
+  close(evtdev);
+  close(fbdev);
+  close(dpdev);
 }
+
+
+
+
