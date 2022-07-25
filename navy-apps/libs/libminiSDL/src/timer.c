@@ -13,9 +13,8 @@ int SDL_RemoveTimer(SDL_TimerID id) {
 }
 
 uint32_t SDL_GetTicks() {
-  extern uint32_t s_time;
-  uint32_t e_time = NDL_GetTicks();
-  uint32_t time = e_time - s_time;
+  //extern uint32_t s_time;
+  uint32_t time = NDL_GetTicks();
   return time;
 }
 
