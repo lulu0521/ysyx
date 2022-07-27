@@ -20,13 +20,15 @@ extern size_t fs_lseek(int fd, size_t offset, int whence);
 extern int fs_close(int fd);
 
 static uintptr_t loader(PCB *pcb, const char *filename) {
+  //printf("===\n");
   int fd=fs_open(filename, 0, 0);
-
+  //printf("****\n");
   int elf_size=sizeof(Elf_Ehdr);//fs_size(fd);
   // printf("elf_size:%d\n",elf_size);
   uint8_t buf[elf_size];
-
+  
   int rlen=fs_read(fd,buf,elf_size);
+  //printf("/////\n");
   assert(rlen==elf_size);
 
   Elf_Ehdr *Ehdr=(void *)buf;
@@ -38,9 +40,10 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
   int phennum=Ehdr->e_phnum;
   
   Elf_Phdr Phdr[phennum];
+  
   fs_lseek(fd,Ehdr-> e_ehsize,SEEK_SET);//==Ehdr-> e_ehsize;
   assert(fs_read(fd,Phdr,phentsize*phennum)==phentsize*phennum);
-
+  
   for(int i=0;i<phennum;i++){
     if(Phdr[i].p_type == PT_LOAD){
       //printf("Phdr[i].p_offset:%d\n",Phdr[i].p_offset);
@@ -52,12 +55,15 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
     }
   }
   fs_close(fd);
+  
   return (uint32_t)Ehdr->e_entry;
 }
 
 void naive_uload(PCB *pcb, const char *filename) {
   //uintptr_t entry = (unsigned)(loader(pcb, filename) & 0xFFFFFFFF);
+  //printf("%s===\n",filename);
   uintptr_t entry = loader(pcb, filename);
+  //printf("===\n");
   Log("Jump to entry = 0x%p", entry);
   ((void(*)())entry) ();
 }

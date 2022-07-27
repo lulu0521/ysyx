@@ -81,7 +81,7 @@ uint32_t get_color(SDL_Palette *palette,int index){
 
 void NDL_DrawRect(uint32_t *pixels, int x, int y, int w, int h);
 void SDL_UpdateRect(SDL_Surface *s, int x, int y, int w, int h) {
-  if(s->format->BitsPerPixel==32){
+  if(s->format->palette==NULL){
     if(x==0 && y==0 && w==0 && h==0){
       w = s->w;
       h = s->h;
@@ -90,7 +90,7 @@ void SDL_UpdateRect(SDL_Surface *s, int x, int y, int w, int h) {
       NDL_DrawRect((uint32_t *)s->pixels + y*s->w + x,x,y,w,h);
     }
   }
-  if(s->format->BitsPerPixel==8){
+  if(s->format->palette!=NULL){
     int i,j;
     if(x==0 && y==0 && w==0 && h==0){
       w = s->w;

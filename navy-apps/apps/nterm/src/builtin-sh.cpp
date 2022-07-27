@@ -23,6 +23,19 @@ static void sh_prompt() {
 }
 
 static void sh_handle_cmd(const char *cmd) {
+  
+  char cmd_[sizeof(cmd)];
+  int i;
+  for(i=0;cmd[i]!='\n';i++){
+    cmd_[i] = cmd[i];
+  }
+  cmd_[i] = '\0';
+  //printf("%s\n",cmd_);
+  /*
+  //execute by Complete route
+  execve(cmd_,NULL,NULL);*/
+  setenv("PATH","/bin/",0);
+  execvp(cmd_,NULL);
 }
 
 void builtin_sh_run() {
@@ -31,7 +44,9 @@ void builtin_sh_run() {
 
   while (1) {
     SDL_Event ev;
+    char cmd_str[128];
     if (SDL_PollEvent(&ev)) {
+      
       if (ev.type == SDL_KEYUP || ev.type == SDL_KEYDOWN) {
         const char *res = term->keypress(handle_key(&ev));
         if (res) {
