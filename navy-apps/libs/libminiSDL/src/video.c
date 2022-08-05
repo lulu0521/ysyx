@@ -161,7 +161,7 @@ SDL_Surface* SDL_CreateRGBSurface(uint32_t flags, int width, int height, int dep
   s->w = width;
   s->h = height;
   s->pitch = width * depth / 8;
-  printf("--------------------%lx  %lx  %lx  %lx\n", s->pitch, width, depth / 8, s->format->BytesPerPixel);
+ // printf("--------------------%lx  %lx  %lx  %lx\n", s->pitch, width, depth / 8, s->format->BytesPerPixel);
   assert(s->pitch == (width * s->format->BytesPerPixel));
 
   if (!(flags & SDL_PREALLOC)) {
