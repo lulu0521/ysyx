@@ -110,6 +110,30 @@ void *memmove(void *dst, const void *src, size_t n) {
   }
   return dst;
 }
+/*
+void *memcpy(void *out, const void *in, size_t n)
+{
+  assert(NULL != out && NULL != in);
+  if(n<=0) return out;
+  char *tmpout = (char *)out;
+  char *tmpin = (char *)in;
+  // panic("Not implemented");
+  if (tmpout < tmpin ||tmpin+n-1 <tmpout){
+    // printf("I am here-1\n");
+    while (n--)
+    {
+      *tmpout++ = *tmpin++;
+    }}
+  else{
+    // printf("I am here0\n");
+    tmpout=tmpout+n-1;
+    tmpin=tmpin+n-1;
+    while(n--){
+      *tmpout--=*tmpin--;
+    }
+  }
+  return out;
+}*/
 
 void *memcpy(void *out, const void *in, size_t n) {
   assert(out!=NULL);

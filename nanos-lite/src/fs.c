@@ -73,6 +73,7 @@ size_t fs_read(int fd, void *buf, size_t len){
 
 size_t ramdisk_write(const void *buf, size_t offset, size_t len);
 size_t fs_write(int fd, const void *buf, size_t len){
+  ///printf("6666\n");
   int len_ = len;
     if(file_table[fd].write !=NULL){
       len_ = file_table[fd].write(buf,file_table[fd].disk_offset+file_table[fd].f_offset,len_);

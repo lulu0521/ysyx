@@ -33,6 +33,7 @@ void exit(){
 }
 
 void do_syscall(Context *c) {
+  //printf("&&&&&\n");
   uintptr_t a[4];
   a[0] = c->GPR1;
   a[1] = c->GPR2;
