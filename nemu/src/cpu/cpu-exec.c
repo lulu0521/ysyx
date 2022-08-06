@@ -135,10 +135,10 @@ void ftrace(Decode *s,char* info_p){
       if(symtab[i].st_info%16==STT_FUNC){  
         if(s->dnpc>=symtab[i].st_value && s->dnpc<symtab[i].st_value+symtab[i].st_size){
           if(s->dnpc==symtab[i].st_value){
-          sprintf(info_p,"0x%x: call[ %s @0x%x ]\n",s->pc,strtab+symtab[i].st_name,s->dnpc);
+          sprintf(info_p,"0x%lx: call[ %s @0x%lx ]\n",s->pc,strtab+symtab[i].st_name,s->dnpc);
           }
           else{
-          sprintf(info_p,"0x%x: ret[ %s ]\n",s->pc,strtab+symtab[i].st_name);
+          sprintf(info_p,"0x%lx: ret[ %s ]\n",s->pc,strtab+symtab[i].st_name);
         }
         }   
       }
