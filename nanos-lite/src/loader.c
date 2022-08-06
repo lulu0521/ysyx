@@ -24,13 +24,18 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
   int fd=fs_open(filename, 0, 0);
   //printf("****\n");
   int elf_size=sizeof(Elf_Ehdr);//fs_size(fd);
+  // printf("elf_size:%d\n",elf_size);
   uint8_t buf[elf_size];
   
   int rlen=fs_read(fd,buf,elf_size);
+  //printf("/////\n");
   assert(rlen==elf_size);
 
   Elf_Ehdr *Ehdr=(void *)buf;
   assert(*(uint32_t *)(Ehdr->e_ident) == 0x464C457f);
+
+  //assert(Ehdr->e_machine == EXPECT_TYPE);
+
   int phentsize=Ehdr->e_phentsize;
   int phennum=Ehdr->e_phnum;
   
